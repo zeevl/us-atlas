@@ -15,7 +15,6 @@
 # territories without counties:
 # as fm gu mh mp pw um
 
-all:
 
 .SECONDARY:
 
@@ -118,76 +117,83 @@ topo/%-zipcodes-10m-ungrouped.json: shp/%/zipcodes.shp
 		--properties zip=ZCTA5CE10 \
 		-- $<
 
-topo/%-zipcodes-10m.json: topo/%-zipcodes-10m-ungrouped.json
+zipcodes/%.json: topo/%-zipcodes-10m-ungrouped.json
+	mkdir -p $(dir $@)
 	node_modules/.bin/topojson-group \
 		-o $@ \
 		-- topo/$*-zipcodes-10m-ungrouped.json
 
-# merge in zip data
-zipcode/%.json: topo/%-zipcodes-10m.json
+grouped/%.json: zipcodes/%.json
 	mkdir -p $(dir $@)
-	bin/zipdata \
-		-c US\ ZIP\ codes.csv \
-		-t topo/$*-zipcodes-10m.json \
+	bin/zipmerge \
+		-i $< \
 		> $@
 
-# group by pocode
-poname/%.json: zipcode/%.json
-	mkdir -p $(dir $@)
-	bin/merge-ponames \
-		-o $@ \
-		-i $<
+# merge in zip data
+# zipcode/%.json: topo/%-zipcodes-10m.json
+# 	mkdir -p $(dir $@)
+# 	bin/zipdata \
+# 		-c US\ ZIP\ codes.csv \
+# 		-t topo/$*-zipcodes-10m.json \
+# 		> $@
 
-state-zipcodes: \
-	poname/al.json \
-	poname/ak.json \
-	poname/az.json \
-	poname/ar.json \
-	poname/ca.json \
-	poname/co.json \
-	poname/ct.json \
-	poname/de.json \
-	poname/dc.json \
-	poname/fl.json \
-	poname/ga.json \
-	poname/hi.json \
-	poname/id.json \
-	poname/il.json \
-	poname/in.json \
-	poname/ia.json \
-	poname/ks.json \
-	poname/ky.json \
-	poname/la.json \
-	poname/me.json \
-	poname/md.json \
-	poname/ma.json \
-	poname/mi.json \
-	poname/mn.json \
-	poname/ms.json \
-	poname/mo.json \
-	poname/mt.json \
-	poname/ne.json \
-	poname/nv.json \
-	poname/nh.json \
-	poname/nj.json \
-	poname/nm.json \
-	poname/ny.json \
-	poname/nc.json \
-	poname/nd.json \
-	poname/oh.json \
-	poname/ok.json \
-	poname/or.json \
-	poname/pa.json \
-	poname/ri.json \
-	poname/sc.json \
-	poname/sd.json \
-	poname/tn.json \
-	poname/tx.json \
-	poname/ut.json \
-	poname/vt.json \
-	poname/va.json \
-	poname/wa.json \
-	poname/wv.json \
-	poname/wi.json \
-	poname/wy.json
+# # group by pocode
+# poname/%.json: zipcode/%.json
+# 	mkdir -p $(dir $@)
+# 	bin/merge-ponames \
+# 		-o $@ \
+# 		-i $<
+
+all: \
+	grouped/al.json \
+	grouped/ak.json \
+	grouped/az.json \
+	grouped/ar.json \
+	grouped/ca.json \
+	grouped/co.json \
+	grouped/ct.json \
+	grouped/de.json \
+	grouped/dc.json \
+	grouped/fl.json \
+	grouped/ga.json \
+	grouped/hi.json \
+	grouped/id.json \
+	grouped/il.json \
+	grouped/in.json \
+	grouped/ia.json \
+	grouped/ks.json \
+	grouped/ky.json \
+	grouped/la.json \
+	grouped/me.json \
+	grouped/md.json \
+	grouped/ma.json \
+	grouped/mi.json \
+	grouped/mn.json \
+	grouped/ms.json \
+	grouped/mo.json \
+	grouped/mt.json \
+	grouped/ne.json \
+	grouped/nv.json \
+	grouped/nh.json \
+	grouped/nj.json \
+	grouped/nm.json \
+	grouped/ny.json \
+	grouped/nc.json \
+	grouped/nd.json \
+	grouped/oh.json \
+	grouped/ok.json \
+	grouped/or.json \
+	grouped/pa.json \
+	grouped/ri.json \
+	grouped/sc.json \
+	grouped/sd.json \
+	grouped/tn.json \
+	grouped/tx.json \
+	grouped/ut.json \
+	grouped/vt.json \
+	grouped/va.json \
+	grouped/wa.json \
+	grouped/wv.json \
+	grouped/wi.json \
+	grouped/wy.json
 

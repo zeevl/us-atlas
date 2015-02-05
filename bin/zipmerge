@@ -1,0 +1,90 @@
+#!/usr/bin/env coffee
+fs = require 'fs'
+binarySearch = require 'binary-search'
+parse = require 'csv-parse'
+topojson = require 'topojson'
+mergeProperties = require "topojson/lib/topojson/merge-properties"
+d3 = require 'd3'
+_ = require 'underscore'
+
+argv = require('yargs')
+  .usage 'merge small, tightly grouped zipcodes into larger areas'
+  .demand ['i']
+  .describe 'i', 'Zipcodes topojson file'
+  .describe 'p', 'Precision'
+  .default 'p', 2
+  .argv
+
+setCoordinates = (topology) ->
+  for key, object of topology.objects
+    feature = topojson.feature topology, object
+    for feature in feature.features
+      centroid = getCentroid feature
+      topoGeo = _.find object.geometries, (geometry) ->
+        geometry.id is feature.id
+
+      topoGeo.properties.gridCoordinates =
+        "#{centroid.x.toFixed(argv.p)}, #{centroid.x.toFixed(argv.p)}"
+
+
+# determine the centroid
+# round to precision
+# set grid coordinates
+# merge coordinates
+
+getCentroid = (feature) ->
+  x = 0
+  y = 0
+  points = 0
+
+  switch feature.geometry.type
+    when 'Polygon'
+      # we only care about the first, outermost ring
+      for point in feature.geometry.coordinates[0]
+        x += point[0]
+        y += point[1]
+        points++
+
+    when 'MultiPolygon'
+      for polygons in feature.geometry.coordinates
+        for polygon in polygons
+          for point in polygon
+            x += point[0]
+            y += point[1]
+            points++
+
+    else
+      console.error 'Dont know what to do with ', feature.geometry.type
+      process.exit 1
+
+  x: x / points
+  y: y / points
+
+
+mergeCoordinates = (topology) ->
+  topology.objects.groupdZipcodes =
+    type: "GeometryCollection"
+    geometries: d3.nest()
+      .key (d) ->
+        return d.properties.gridCoordinates
+      .entries(topology.objects.zipcodes.geometries)
+      .map (entry) ->
+        polygon = topojson.mergeArcs(topology, entry.values)
+        polygon.id = entry.values[0].id
+
+        zipcodes = []
+        _.each entry.values, (value) ->
+          zipcodes.push(value.properties.zip) if value.properties.zip
+
+        polygon.properties = {zipcodes}
+        return polygon;
+
+
+topology = JSON.parse fs.readFileSync argv.i
+setCoordinates topology
+mergeCoordinates topology
+delete topology.objects.zipcodes
+
+console.log JSON.stringify topology
+
+return

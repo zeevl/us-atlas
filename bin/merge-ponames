@@ -1,0 +1,40 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+binarySearch = require 'binary-search'
+parse = require 'csv-parse'
+topojson = require 'topojson'
+mergeProperties = require "topojson/lib/topojson/merge-properties"
+d3 = require 'd3'
+
+
+argv = require('yargs')
+  .usage 'Usage: $0 -c <zipcodes.csv> -i <infile.json> -o <outfile.json>'
+  .demand ['i', 'o']
+  .argv
+
+kfn = new Function("d", "return d.properties.poname")
+
+topology = JSON.parse fs.readFileSync argv.i
+
+topology.objects.ponames =
+  type: "GeometryCollection"
+  geometries: d3.nest()
+    .key kfn
+    .entries(topology.objects.zipcodes.geometries)
+    .map (entry) ->
+      polygon = topojson.mergeArcs(topology, entry.values)
+      id = kfn(entry.values[0])
+
+      if (id != null) then polygon.id = id;
+
+      properties = mergeProperties()
+      entry.values.forEach(properties.merge)
+      properties.apply(polygon)
+
+      return polygon;
+
+delete topology.objects.zipcodes
+
+topojson.prune(topology, {verbose: true});
+fs.writeFileSync argv.o, JSON.stringify(topology)
