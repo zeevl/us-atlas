@@ -6,6 +6,7 @@ topojson = require 'topojson'
 mergeProperties = require "topojson/lib/topojson/merge-properties"
 d3 = require 'd3'
 _ = require 'underscore'
+path = require 'path'
 
 argv = require('yargs')
   .usage 'merge small, tightly grouped zipcodes into larger areas'
@@ -14,6 +15,13 @@ argv = require('yargs')
   .describe 'p', 'Precision'
   .default 'p', 2
   .argv
+
+
+# determine the centroid
+# round to precision
+# set grid coordinates
+# merge coordinates
+
 
 setCoordinates = (topology) ->
   for key, object of topology.objects
@@ -24,13 +32,8 @@ setCoordinates = (topology) ->
         geometry.id is feature.id
 
       topoGeo.properties.gridCoordinates =
-        "#{centroid.x.toFixed(argv.p)}, #{centroid.x.toFixed(argv.p)}"
+        "#{Math.round(centroid.x * argv.p)}, #{Math.round(centroid.y * argv.p)}"
 
-
-# determine the centroid
-# round to precision
-# set grid coordinates
-# merge coordinates
 
 getCentroid = (feature) ->
   x = 0
@@ -76,15 +79,17 @@ mergeCoordinates = (topology) ->
         _.each entry.values, (value) ->
           zipcodes.push(value.properties.zip) if value.properties.zip
 
-        polygon.properties = {zipcodes}
+        polygon.properties =
+          zipcodes: zipcodes
+          coordinates: entry.key
+
         return polygon;
 
 
 topology = JSON.parse fs.readFileSync argv.i
 setCoordinates topology
+
 mergeCoordinates topology
 delete topology.objects.zipcodes
 
 console.log JSON.stringify topology
-
-return
