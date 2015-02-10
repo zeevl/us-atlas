@@ -1,6 +1,11 @@
 # Census Bureau Geographic Hierarchy
 # http://www.census.gov/geo/www/geodiagram.html
 
+# OSM street maps
+# http://download.geofabrik.de/
+
+
+
 # states:
 # al ak az ar ca co ct de dc fl
 # ga hi id il in ia ks ky la me
@@ -14,7 +19,7 @@
 
 # territories without counties:
 # as fm gu mh mp pw um
-
+wa
 
 .SECONDARY:
 

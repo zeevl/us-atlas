@@ -1,0 +1,102 @@
+#!/usr/bin/env coffee
+
+mkdirp = require 'mkdirp'
+fs = require 'fs'
+path = require 'path'
+request = require 'request'
+$ = require 'cheerio'
+async = require 'async'
+argv = require('yargs')
+  .usage('Scrape zipcode/county mapping from http://www.zipcodestogo.com/')
+  .demand([ 'o' ])
+  .describe('o', 'output directory')
+  .argv
+
+states =
+  'alabama': 'al'
+  'alaska': 'ak'
+  'arizona': 'az'
+  'arkansas': 'ar'
+  'california': 'ca'
+  'colorado': 'co'
+  'connecticut': 'ct'
+  'delaware': 'de'
+  'florida': 'fl'
+  'georgia': 'ga'
+  'hawaii': 'hi'
+  'idaho': 'id'
+  'illinois': 'il'
+  'indiana': 'in'
+  'iowa': 'ia'
+  'kansas': 'ks'
+  'kentucky': 'ky'
+  'louisiana': 'la'
+  'maine': 'me'
+  'maryland': 'md'
+  'massachusetts': 'ma'
+  'michigan': 'mi'
+  'minnesota': 'mn'
+  'mississippi': 'ms'
+  'missouri': 'mo'
+  'montana': 'mt'
+  'nebraska': 'ne'
+  'nevada': 'nv'
+  'new hampshire': 'nh'
+  'new jersey': 'nj'
+  'new mexico': 'nm'
+  'new york': 'ny'
+  'north carolina': 'nc'
+  'north dakota': 'nd'
+  'ohio': 'oh'
+  'oklahoma': 'ok'
+  'oregon': 'or'
+  'pennsylvania': 'pa'
+  'rhode island': 'ri'
+  'south carolina': 'sc'
+  'south dakota': 'sd'
+  'tennessee': 'tn'
+  'texas': 'tx'
+  'utah': 'ut'
+  'vermont': 'vt'
+  'virginia': 'va'
+  'washington': 'wa'
+  'west virginia': 'wv'
+  'wisconsin': 'wi'
+  'wyoming': 'wy'
+
+getStateLinks = (callback) ->
+  request.get 'http://www.zipcodestogo.com/ZIP-Codes-by-State.htm', (err, res, data) ->
+    throw err if err
+
+    links = []
+    $('.listStates a.stateLink', data).each ->
+      links.push name: $(this).text(), href: $(this).attr('href')
+
+    callback null, links
+
+
+
+
+mkdirp.sync argv.o
+
+getStateLinks (err, links) ->
+  throw err if err
+
+  zips = []
+
+  async.each links, (link, callback) ->
+    request.get link.href, (err, res, data) ->
+      $(data).find('table table tr').each ->
+        return if $(this).attr('bgcolor') is '#f5f5f5'
+        $tds = $(this).find('td')
+        return unless $tds.length is 4
+
+        zips.push
+          zip: $tds.eq(0).text()
+          county: $tds.eq(1).text()
+
+      filename = path.join(argv.o, "#{states[link.name.toLowerCase()]}.json")
+      console.log filename
+      fs.writeFileSync filename, JSON.stringify zips
+
+
