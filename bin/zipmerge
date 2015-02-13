@@ -1,4 +1,5 @@
 #!/usr/bin/env coffee
+
 fs = require 'fs'
 binarySearch = require 'binary-search'
 parse = require 'csv-parse'

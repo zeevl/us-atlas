@@ -74,7 +74,125 @@ getStateLinks = (callback) ->
 
     callback null, links
 
-
+normalizeName = (name) ->
+  switch name
+    when 'De Kalb' then 'DeKalb'
+    when 'Valdez Cordova' then 'Valdez-Cordova'
+    when 'Skagway Hoonah Angoon' then 'Hoonah-Angoon'
+    when 'Yukon Koyukuk' then 'Yukon-Koyukuk'
+    when 'Matanuska Susitna' then 'Matanuska-Susitna'
+    when 'Prince Wales Ketchikan' then 'Prince of Wales-Hyder'
+    when 'Lake And Peninsula' then 'Lake and Peninsula'
+    when 'Saint Francis' then 'St. Francis'
+    when 'Miami-dade' then 'Miami-Dade'
+    when 'Saint Lucie' then 'St. Lucie'
+    when 'DeSoto' then 'De Soto'
+    when 'Saint Johns' then 'St. Johns'
+    when 'Mcduffie' then 'McDuffie'
+    when 'Mcintosh' then 'McIntosh'
+    when 'Dekalb' then 'DeKalb'
+    when 'Obrien' then 'O\'Brien'
+    when 'Mcdonough' then 'McDonough'
+    when 'Mclean' then 'McLean'
+    when 'Dupage' then 'DuPage'
+    when 'La Salle' then 'LaSalle'
+    when 'Saint Clair' then 'St. Clair'
+    when 'Dekalb' then 'DeKalb'
+    when 'Dewitt' then 'De Witt'
+    when 'Mchenry' then 'McHenry'
+    when 'Lagrange' then 'LaGrange'
+    when 'St Joseph' then 'St. Joseph'
+    when 'La Porte' then 'LaPorte'
+    when 'Mcpherson' then 'McPherson'
+    when 'Mclean' then 'McLean'
+    when 'Mccreary' then 'McCreary'
+    when 'Mccracken' then 'McCracken'
+    when 'Saint Bernard' then 'St. Bernard'
+    when 'Saint Tammany' then 'St. Tammany'
+    when 'Saint Charles' then 'St. Charles'
+    when 'Saint Mary' then 'St. Mary'
+    when 'St John The Baptist' then 'St. John the Baptist'
+    when 'Saint Martin' then 'St. Martin'
+    when 'LaSalle' then 'La Salle'
+    when 'Saint Helena' then 'St. Helena'
+    when 'Saint James' then 'St. James'
+    when 'Saint Landry' then 'St. Landry'
+    when 'Saint Marys' then 'St. Mary\'s'
+    when 'Prince Georges' then 'Prince George\'s'
+    when 'Queen Annes' then 'Queen Anne\'s'
+    when 'Saint Joseph' then 'St. Joseph'
+    when 'Saint Clair' then 'St. Clair'
+    when 'Lake Of The Woods' then 'Lake of the Woods'
+    when 'Lac Qui Parle' then 'Lac qui Parle'
+    when 'Mcleod' then 'McLeod'
+    when 'Saint Louis' then 'St. Louis'
+    when 'Mcdonald' then 'McDonald'
+    when 'Saint Francois' then 'St. Francois'
+    when 'Sainte Genevieve' then 'Ste. Genevieve'
+    when 'Saint Louis' then 'St. Louis'
+    when 'Saint Clair' then 'St. Clair'
+    when 'Saint Charles' then 'St. Charles'
+    when 'Desoto' then 'DeSoto'
+    when 'Mccone' then 'McCone'
+    when 'Lewis And Clark' then 'Lewis and Clark'
+    when 'Mcdowell' then 'McDowell'
+    when 'Mckenzie' then 'McKenzie'
+    when 'Lamoure' then 'LaMoure'
+    when 'Mcintosh' then 'McIntosh'
+    when 'Mchenry' then 'McHenry'
+    when 'Mclean' then 'McLean'
+    when 'Mcpherson' then 'McPherson'
+    when 'Mckinley' then 'McKinley'
+    when 'Dona Ana' then 'Doña Ana'
+    when 'Saint Lawrence' then 'St. Lawrence'
+    when 'Mcclain' then 'McClain'
+    when 'Mccurtain' then 'McCurtain'
+    when 'Mckean' then 'McKean'
+    when 'Mccormick' then 'McCormick'
+    when 'Mccook' then 'McCook'
+    when 'Mcpherson' then 'McPherson'
+    when 'Mcminn' then 'McMinn'
+    when 'Mcnairy' then 'McNairy'
+    when 'Mcmullen' then 'McMullen'
+    when 'Mclennan' then 'McLennan'
+    when 'De Witt' then 'DeWitt'
+    when 'Mcculloch' then 'McCulloch'
+    when 'Alexandria City' then 'Alexandria'
+    when 'Martinsville City' then 'Martinsville'
+    when 'Lexington City' then 'Lexington'
+    when 'Buena Vista City' then 'Buena Vista'
+    when 'Winchester City' then 'Winchester'
+    when 'Norton City' then 'Norton'
+    when 'Suffolk City' then 'Suffolk'
+    when 'Covington City' then 'Covington'
+    when 'Charlottesville City' then 'Charlottesville'
+    when 'Portsmouth City' then 'Portsmouth'
+    when 'Poquoson City' then 'Poquoson'
+    when 'Galax City' then 'Galax'
+    when 'Manassas Park City' then 'Manassas Park'
+    when 'Manassas City' then 'Manassas'
+    when 'Fredericksburg City' then 'Fredericksburg'
+    when 'Chesapeake City' then 'Chesapeake'
+    when 'Norfolk City' then 'Norfolk'
+    when 'King And Queen' then 'King and Queen'
+    when 'Colonial Heights City' then 'Colonial Heights'
+    when 'Hopewell City' then 'Hopewell'
+    when 'Petersburg City' then 'Petersburg'
+    when 'Hampton City' then 'Hampton'
+    when 'Isle Of Wight' then 'Isle of Wight'
+    when 'Williamsburg City' then 'Williamsburg'
+    when 'Virginia Beach City' then 'Virginia Beach'
+    when 'Lynchburg City' then 'Lynchburg'
+    when 'Falls Church City' then 'Falls Church'
+    when 'Danville City' then 'Danville'
+    when 'Newport News City' then 'Newport News'
+    when 'Harrisonburg City' then 'Harrisonburg'
+    when 'Waynesboro City' then 'Waynesboro'
+    when 'Staunton City' then 'Staunton'
+    when 'Saint Croix' then 'St. Croix'
+    when 'Fond Du Lac' then 'Fond du Lac'
+    when 'Mcdowell' then 'McDowell'
+    else name
 
 
 mkdirp.sync argv.o
@@ -82,21 +200,47 @@ mkdirp.sync argv.o
 getStateLinks (err, links) ->
   throw err if err
 
-  zips = []
-
   async.each links, (link, callback) ->
     request.get link.href, (err, res, data) ->
+      counties = {}
+
       $(data).find('table table tr').each ->
         return if $(this).attr('bgcolor') is '#f5f5f5'
         $tds = $(this).find('td')
         return unless $tds.length is 4
 
-        zips.push
-          zip: $tds.eq(0).text()
-          county: $tds.eq(1).text()
+        county = normalizeName $tds.eq(2).text()
+        zip = $tds.eq(0).text()
 
-      filename = path.join(argv.o, "#{states[link.name.toLowerCase()]}.json")
+        if county is 'Wrangell Petersburg'
+          county = if zip in ['99930', '99929'] then 'Wrangell' else 'Petersburg'
+
+        if zip is '99840' then county = 'Skagway'
+        if zip is '96742' then county = 'Kalawao'
+        if zip is '23847' then county = 'Emporia'
+        if zip in [
+            "34265",
+            "34266",
+            "34267",
+            "34268",
+            "34269"
+          ]
+          county = 'DeSoto'
+
+        if zip in [
+            "78001",
+            "78014",
+            "78019",
+            "78021"
+          ]
+          county = 'La Salle'
+
+
+        counties[county] ?= zipcodes: []
+        counties[county].zipcodes.push $tds.eq(0).text()
+
+      filename = path.join argv.o, "#{states[link.name.toLowerCase()]}.json"
       console.log filename
-      fs.writeFileSync filename, JSON.stringify zips
+      fs.writeFileSync filename, JSON.stringify counties
 
 

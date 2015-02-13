@@ -19,7 +19,6 @@
 
 # territories without counties:
 # as fm gu mh mp pw um
-wa
 
 .SECONDARY:
 
@@ -117,10 +116,14 @@ topo/%-zipcodes-10m-ungrouped.json: shp/%/zipcodes.shp
 		-o $@ \
 		--no-pre-quantization \
 		--post-quantization=1e6 \
-		--simplify=7e-7 \
 		--id-property=+GEOID10 \
+		--simplify-proportion=.50 \
 		--properties zip=ZCTA5CE10 \
 		-- $<
+
+		# --no-pre-quantization \
+		# --post-quantization=1e6 \
+		# --simplify=7e-7 \
 
 zipcodes/%.json: topo/%-zipcodes-10m-ungrouped.json
 	mkdir -p $(dir $@)
@@ -128,77 +131,145 @@ zipcodes/%.json: topo/%-zipcodes-10m-ungrouped.json
 		-o $@ \
 		-- topo/$*-zipcodes-10m-ungrouped.json
 
-grouped/%.json: zipcodes/%.json
+highmaps/states/%.json:
 	mkdir -p $(dir $@)
-	bin/zipmerge \
-		-i $< \
+	curl http://code.highcharts.com/mapdata/countries/us/us-$*-all.geo.json \
 		> $@
 
-# merge in zip data
-# zipcode/%.json: topo/%-zipcodes-10m.json
-# 	mkdir -p $(dir $@)
-# 	bin/zipdata \
-# 		-c US\ ZIP\ codes.csv \
-# 		-t topo/$*-zipcodes-10m.json \
-# 		> $@
+highmaps/us-all.json:
+	mkdir -p $(dir $@)
+	curl http://code.highcharts.com/mapdata/countries/us/us-all.geo.json \
+		> $@
 
-# # group by pocode
-# poname/%.json: zipcode/%.json
-# 	mkdir -p $(dir $@)
-# 	bin/merge-ponames \
-# 		-o $@ \
-# 		-i $<
+countries/us-all.json: highmaps/us-all.json
+	mkdir -p $(dir $@)
+	node_modules/.bin/topojson \
+		-o $@ \
+		--properties \
+		-- $<
 
-all: \
-	grouped/al.json \
-	grouped/ak.json \
-	grouped/az.json \
-	grouped/ar.json \
-	grouped/ca.json \
-	grouped/co.json \
-	grouped/ct.json \
-	grouped/de.json \
-	grouped/dc.json \
-	grouped/fl.json \
-	grouped/ga.json \
-	grouped/hi.json \
-	grouped/id.json \
-	grouped/il.json \
-	grouped/in.json \
-	grouped/ia.json \
-	grouped/ks.json \
-	grouped/ky.json \
-	grouped/la.json \
-	grouped/me.json \
-	grouped/md.json \
-	grouped/ma.json \
-	grouped/mi.json \
-	grouped/mn.json \
-	grouped/ms.json \
-	grouped/mo.json \
-	grouped/mt.json \
-	grouped/ne.json \
-	grouped/nv.json \
-	grouped/nh.json \
-	grouped/nj.json \
-	grouped/nm.json \
-	grouped/ny.json \
-	grouped/nc.json \
-	grouped/nd.json \
-	grouped/oh.json \
-	grouped/ok.json \
-	grouped/or.json \
-	grouped/pa.json \
-	grouped/ri.json \
-	grouped/sc.json \
-	grouped/sd.json \
-	grouped/tn.json \
-	grouped/tx.json \
-	grouped/ut.json \
-	grouped/vt.json \
-	grouped/va.json \
-	grouped/wa.json \
-	grouped/wv.json \
-	grouped/wi.json \
-	grouped/wy.json
+states-nozips/%.json: highmaps/states/%.json
+	mkdir -p $(dir $@)
+	node_modules/.bin/topojson \
+		-o $@ \
+		--properties name \
+		-- $<
 
+states/%.json: states-nozips/%.json
+	mkdir -p $(dir $@)
+	bin/add-county-zips \
+		-t $< \
+		-z county-zipcodes/$*.json \
+		> $@
+
+counties/%/: zipcodes/%.json
+	bin/split-counties \
+		-i $< \
+		-c county-zipcodes/$*.json \
+		-o $@
+
+states: \
+	states/al.json \
+	states/ak.json \
+	states/az.json \
+	states/ar.json \
+	states/ca.json \
+	states/co.json \
+	states/ct.json \
+	states/de.json \
+	states/fl.json \
+	states/ga.json \
+	states/hi.json \
+	states/id.json \
+	states/il.json \
+	states/in.json \
+	states/ia.json \
+	states/ks.json \
+	states/ky.json \
+	states/la.json \
+	states/me.json \
+	states/md.json \
+	states/ma.json \
+	states/mi.json \
+	states/mn.json \
+	states/ms.json \
+	states/mo.json \
+	states/mt.json \
+	states/ne.json \
+	states/nv.json \
+	states/nh.json \
+	states/nj.json \
+	states/nm.json \
+	states/ny.json \
+	states/nc.json \
+	states/nd.json \
+	states/oh.json \
+	states/ok.json \
+	states/or.json \
+	states/pa.json \
+	states/ri.json \
+	states/sc.json \
+	states/sd.json \
+	states/tn.json \
+	states/tx.json \
+	states/ut.json \
+	states/vt.json \
+	states/va.json \
+	states/wa.json \
+	states/wv.json \
+	states/wi.json \
+	states/wy.json
+
+counties: \
+	counties/al/ \
+	counties/ak/ \
+	counties/az/ \
+	counties/ar/ \
+	counties/ca/ \
+	counties/co/ \
+	counties/ct/ \
+	counties/de/ \
+	counties/fl/ \
+	counties/ga/ \
+	counties/hi/ \
+	counties/id/ \
+	counties/il/ \
+	counties/in/ \
+	counties/ia/ \
+	counties/ks/ \
+	counties/ky/ \
+	counties/la/ \
+	counties/me/ \
+	counties/md/ \
+	counties/ma/ \
+	counties/mi/ \
+	counties/mn/ \
+	counties/ms/ \
+	counties/mo/ \
+	counties/mt/ \
+	counties/ne/ \
+	counties/nv/ \
+	counties/nh/ \
+	counties/nj/ \
+	counties/nm/ \
+	counties/ny/ \
+	counties/nc/ \
+	counties/nd/ \
+	counties/oh/ \
+	counties/ok/ \
+	counties/or/ \
+	counties/pa/ \
+	counties/ri/ \
+	counties/sc/ \
+	counties/sd/ \
+	counties/tn/ \
+	counties/tx/ \
+	counties/ut/ \
+	counties/vt/ \
+	counties/va/ \
+	counties/wa/ \
+	counties/wv/ \
+	counties/wi/ \
+	counties/wy/
+
+all: states counties countries/us-all.json
