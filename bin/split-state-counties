@@ -1,0 +1,84 @@
+#!/usr/bin/env coffee
+
+_ = require 'underscore'
+fs = require 'fs'
+path = require 'path'
+topojson = require 'topojson'
+
+argv = require('yargs')
+  .usage 'Split county topojson files by state'
+  .demand ['o', '_']
+  .describe 'o', 'Output directory'
+  .describe '_', 'US-County topojson'
+  .argv
+
+stateFips =
+  al: '01'
+  ak: '02'
+  az: '04'
+  ar: '05'
+  ca: '06'
+  co: '08'
+  ct: '09'
+  de: '10'
+  dc: '11'
+  fl: '12'
+  ga: '13'
+  hi: '15'
+  id: '16'
+  il: '17'
+  in: '18'
+  ia: '19'
+  ks: '20'
+  ky: '21'
+  la: '22'
+  me: '23'
+  md: '24'
+  ma: '25'
+  mi: '26'
+  mn: '27'
+  ms: '28'
+  mo: '29'
+  mt: '30'
+  ne: '31'
+  nv: '32'
+  nh: '33'
+  nj: '34'
+  nm: '35'
+  ny: '36'
+  nc: '37'
+  nd: '38'
+  oh: '39'
+  ok: '40'
+  or: '41'
+  pa: '42'
+  ri: '44'
+  sc: '45'
+  sd: '46'
+  tn: '47'
+  tx: '48'
+  ut: '49'
+  vt: '50'
+  va: '51'
+  wa: '53'
+  wv: '54'
+  wi: '55'
+  wy: '56'
+  as: '60'
+
+topo = fs.readFileSync argv._[0], 'utf8'
+
+for state, fips of stateFips
+  filename = path.join argv.o, "#{state}.json"
+  console.log "#{filename}..."
+
+  stateTopo = JSON.parse topo
+  delete stateTopo.objects['counties-all'].bbox
+
+  stateTopo.objects['counties-all'].geometries =
+    _.filter stateTopo.objects['counties-all'].geometries, (entry) ->
+      entry.properties.STATEFP is fips
+
+  topojson.prune stateTopo
+  fs.writeFileSync filename, JSON.stringify stateTopo
+

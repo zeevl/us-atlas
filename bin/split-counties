@@ -1,0 +1,41 @@
+#!/usr/bin/env coffee
+
+_ = require 'underscore'
+fs = require 'fs'
+path = require 'path'
+topojson = require 'topojson'
+mkdirp = require 'mkdirp'
+
+argv = require('yargs')
+  .usage 'Split zipcode topojson files by county'
+  .demand ['i', 'c', 'o']
+  .describe 'i', 'Zipcodes topojson file'
+  .describe 'c', 'County json file'
+  .describe 'o', 'Output directory'
+  .argv
+
+
+raw = fs.readFileSync argv.i
+topology = JSON.parse raw
+countyTopo = JSON.parse raw
+
+zipcodes = JSON.parse fs.readFileSync argv.c
+
+mkdirp.sync argv.o
+
+for name, county of zipcodes
+  countyTopo = JSON.parse raw
+  countyTopo.objects.zipcodes.geometries =
+    _.filter topology.objects.zipcodes.geometries, (entry) ->
+      entry.properties.zip in county.zipcodes
+
+  for geometry in countyTopo.objects.zipcodes.geometries
+    geometry.id = geometry.properties.name = geometry.properties.zip
+    delete geometry.properties.zip
+
+  topojson.prune countyTopo
+
+  outfile = path.join argv.o, "#{name.replace(' ', '_').replace('\'', '').toLowerCase()}.json"
+
+  fs.writeFileSync outfile, JSON.stringify countyTopo
+  console.log outfile

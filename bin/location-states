@@ -1,0 +1,27 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+binarySearch = require 'binary-search'
+parse = require 'csv-parse'
+argv = require('yargs')
+  .usage 'Usage: $0 -c <zipcodes.csv> -t <topo.json>'
+  .demand ['c', 't']
+  .argv
+
+parser = parse columns: true, (err, data) ->
+  throw err if err
+
+  locations = JSON.parse fs.readFileSync argv.t
+  for location in locations
+    location.state = getState data, location.zip_code
+
+  console.log JSON.stringify locations
+
+getState = (data, zip) ->
+  i = binarySearch data, ZIP: zip, (a, b) ->
+    parseInt(a.ZIP) - parseInt(b.ZIP)
+
+  if i >= 0 then data[i].STATE else zip
+
+
+fs.createReadStream(argv.c).pipe parser

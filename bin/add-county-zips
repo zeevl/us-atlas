@@ -1,0 +1,21 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+argv = require('yargs')
+  .usage 'Usage: $0 -z <zipcodes.json> -t <topo.json>'
+  .demand ['z', 't']
+  .argv
+
+topo = JSON.parse fs.readFileSync argv.t
+zipcodes = JSON.parse fs.readFileSync argv.z
+
+for name, object of topo.objects
+  for geometry in object.geometries
+    node = zipcodes[geometry.properties.name]
+
+    unless node
+      throw new Error('couldnt find '+ geometry.properties.name)
+
+    geometry.properties.zipcodes = node.zipcodes
+
+console.log JSON.stringify topo

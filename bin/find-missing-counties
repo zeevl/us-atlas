@@ -1,0 +1,15 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+path = require 'path'
+
+files = fs.readdirSync 'highmaps/states'
+for file in files
+  topo = JSON.parse fs.readFileSync 'highmaps/states/' + file
+  zipcodes = JSON.parse fs.readFileSync 'county-zipcodes/' + file
+
+  for feature in topo.features
+    unless zipcodes[feature.properties.name]
+      console.log(file + ': ' + feature.properties.name);
+
+

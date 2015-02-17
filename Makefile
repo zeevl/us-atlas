@@ -34,6 +34,13 @@ gz/tl_2010_%_zcta510.zip:
 	curl 'http://www2.census.gov/geo/tiger/TIGER2010/ZCTA5/2010/$(notdir $@)' -o $@.download
 	mv $@.download $@
 
+gz/tl_2014_us_county.zip:
+	mkdir -p $(dir $@)
+	curl 'http://www2.census.gov/geo/tiger/TIGER2014/COUNTY/tl_2014_us_county.zip' -o $@.download
+	mv $@.download $@
+
+shp/us/counties-all.shp: gz/tl_2014_us_county.zip
+
 shp/us/zipcodes-unmerged.shp: gz/tl_2012_us_zcta510.zip
 
 shp/al/zipcodes.shp: gz/tl_2010_01_zcta510.zip
@@ -96,19 +103,33 @@ shp/us/%.shp:
 	for file in $(basename $@)/*; do chmod 644 $$file; mv $$file $(basename $@).$${file##*.}; done
 	rmdir $(basename $@)
 
-# merge geometries
-shp/us/%.json: shp/us/%-unmerged.shp bin/geomerge
-	@rm -f -- $@ $(basename $@)-unmerged.json
-	ogr2ogr -f 'GeoJSON' $(basename $@)-unmerged.json $<
-	bin/geomerge < $(basename $@)-unmerged.json > $@
-
-shp/us/zipcodes-unmerged.shp shp/us/cbsa.shp shp/%/tracts.shp shp/%/blockgroups.shp shp/%/blocks.shp shp/%/zipcodes.shp:
+shp/us/counties-all.shp shp/us/zipcodes-unmerged.shp shp/us/cbsa.shp shp/%/tracts.shp shp/%/blockgroups.shp shp/%/blocks.shp shp/%/zipcodes.shp:
 	rm -rf $(basename $@)
 	mkdir -p $(basename $@)
 	unzip -d $(basename $@) $<
 	for file in $(basename $@)/*; do chmod 644 $$file; mv $$file $(basename $@).$${file##*.}; done
 	rmdir $(basename $@)
 	touch $@
+
+# merge geometries
+shp/us/%.json: shp/us/%-unmerged.shp bin/geomerge
+	@rm -f -- $@ $(basename $@)-unmerged.json
+	ogr2ogr -f 'GeoJSON' $(basename $@)-unmerged.json $<
+	bin/geomerge < $(basename $@)-unmerged.json > $@
+
+topo/counties-all.json: shp/us/counties-all.shp
+	mkdir -p $(dir $@)
+	node_modules/.bin/topojson \
+		-o $@ \
+		--no-pre-quantization \
+		--post-quantization=1e6 \
+		--id-property=+GEOID \
+		--simplify=7e-7 \
+		--properties STATEFP \
+		--properties NAME \
+		-- $<
+
+		# --simplify-proportion=.50 \
 
 topo/%-zipcodes-10m-ungrouped.json: shp/%/zipcodes.shp
 	mkdir -p $(dir $@)
@@ -131,23 +152,6 @@ zipcodes/%.json: topo/%-zipcodes-10m-ungrouped.json
 		-o $@ \
 		-- topo/$*-zipcodes-10m-ungrouped.json
 
-highmaps/states/%.json:
-	mkdir -p $(dir $@)
-	curl http://code.highcharts.com/mapdata/countries/us/us-$*-all.geo.json \
-		> $@
-
-highmaps/us-all.json:
-	mkdir -p $(dir $@)
-	curl http://code.highcharts.com/mapdata/countries/us/us-all.geo.json \
-		> $@
-
-countries/us-all.json: highmaps/us-all.json
-	mkdir -p $(dir $@)
-	node_modules/.bin/topojson \
-		-o $@ \
-		--properties \
-		-- $<
-
 states-nozips/%.json: highmaps/states/%.json
 	mkdir -p $(dir $@)
 	node_modules/.bin/topojson \
@@ -167,6 +171,12 @@ counties/%/: zipcodes/%.json
 		-i $< \
 		-c county-zipcodes/$*.json \
 		-o $@
+
+state-counties: topo/counties-all.json
+	mkdir -p $@
+	bin/split-state-counties \
+		-o $@ \
+		-- $<
 
 states: \
 	states/al.json \
@@ -272,4 +282,4 @@ counties: \
 	counties/wi/ \
 	counties/wy/
 
-all: states counties countries/us-all.json
+all: state-counties states counties countries/us-all.json
