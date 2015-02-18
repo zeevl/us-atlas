@@ -4,11 +4,13 @@ _ = require 'underscore'
 fs = require 'fs'
 path = require 'path'
 topojson = require 'topojson'
+parse = require 'csv-parse'
 
 argv = require('yargs')
-  .usage 'Split county topojson files by state'
-  .demand ['o', '_']
+  .usage 'Split county topojson files by state, merging in the list of zipcodes for each county'
+  .demand ['o', 'c', '_']
   .describe 'o', 'Output directory'
+  .describe 'c', 'Zipcode to County relationships (csv)'
   .describe '_', 'US-County topojson'
   .argv
 
@@ -68,17 +70,31 @@ stateFips =
 
 topo = fs.readFileSync argv._[0], 'utf8'
 
-for state, fips of stateFips
-  filename = path.join argv.o, "#{state}.json"
-  console.log "#{filename}..."
+parser = parse columns: true, (err, zipcodes) ->
+  throw err if err
 
-  stateTopo = JSON.parse topo
-  delete stateTopo.objects['counties-all'].bbox
+  for state, fips of stateFips
+    filename = path.join argv.o, "#{state}.json"
+    console.log "#{filename}..."
 
-  stateTopo.objects['counties-all'].geometries =
-    _.filter stateTopo.objects['counties-all'].geometries, (entry) ->
-      entry.properties.STATEFP is fips
+    stateTopo = JSON.parse topo
+    delete stateTopo.objects['counties-all'].bbox
 
-  topojson.prune stateTopo
-  fs.writeFileSync filename, JSON.stringify stateTopo
+    stateTopo.objects['counties-all'].geometries =
+      _.filter stateTopo.objects['counties-all'].geometries, (entry) ->
+        entry.properties.statefp is fips
+
+    topojson.prune stateTopo
+
+    for county in stateTopo.objects['counties-all'].geometries
+      county.properties.zipcodes =
+        _.chain(zipcodes)
+          .where GEOID: ('00000' + county.id).slice(-5)
+          .pluck 'ZCTA5'
+          .value()
+
+    fs.writeFileSync filename, JSON.stringify stateTopo
+
+
+fs.createReadStream(argv.c).pipe parser
 

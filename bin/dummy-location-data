@@ -1,0 +1,24 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+parse = require 'csv-parse'
+argv = require('yargs')
+  .usage 'Usage: $0 -c <locations.csv>'
+  .demand ['c']
+  .argv
+
+locations = []
+
+parser = parse columns: true, (err, data) ->
+  throw err if err
+
+  for line in data
+    locations.push
+      data:
+        scores: 60 + (Math.round(Math.random() * 100) % 30)
+      zip_code: line['Postal Code']
+      state: line.State
+
+  console.log JSON.stringify locations
+
+fs.createReadStream(argv.c).pipe parser

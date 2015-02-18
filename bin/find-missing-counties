@@ -3,9 +3,9 @@
 fs = require 'fs'
 path = require 'path'
 
-files = fs.readdirSync 'highmaps/states'
+files = fs.readdirSync 'state-counties/'
 for file in files
-  topo = JSON.parse fs.readFileSync 'highmaps/states/' + file
+  topo = JSON.parse fs.readFileSync 'state-counties/' + file
   zipcodes = JSON.parse fs.readFileSync 'county-zipcodes/' + file
 
   for feature in topo.features

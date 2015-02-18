@@ -6,6 +6,7 @@
 
 
 
+
 # states:
 # al ak az ar ca co ct de dc fl
 # ga hi id il in ia ks ky la me
@@ -21,6 +22,12 @@
 # as fm gu mh mp pw um
 
 .SECONDARY:
+
+# States
+gz/tl_2014_us_state.zip:
+	mkdir -p $(dir $@)
+	curl 'http://www2.census.gov/geo/tiger/TIGER2014/STATE/tl_2014_us_state.zip' -o $@.download
+	mv $@.download $@
 
 # Zip Code Tabulation Areas
 gz/tl_2012_us_zcta510.zip:
@@ -39,6 +46,16 @@ gz/tl_2014_us_county.zip:
 	curl 'http://www2.census.gov/geo/tiger/TIGER2014/COUNTY/tl_2014_us_county.zip' -o $@.download
 	mv $@.download $@
 
+# zip to county mapping
+csv/zcta_county_rel_10.txt:
+	mkdir -p $(dir $@)
+	curl 'https://www.census.gov/geo/maps-data/data/docs/rel/zcta_county_rel_10.txt' -o $@.download
+	mv $@.download $@
+
+# states shapefile
+shp/us/us-all.shp: gz/tl_2014_us_state.zip
+
+# state-counties
 shp/us/counties-all.shp: gz/tl_2014_us_county.zip
 
 shp/us/zipcodes-unmerged.shp: gz/tl_2012_us_zcta510.zip
@@ -103,7 +120,7 @@ shp/us/%.shp:
 	for file in $(basename $@)/*; do chmod 644 $$file; mv $$file $(basename $@).$${file##*.}; done
 	rmdir $(basename $@)
 
-shp/us/counties-all.shp shp/us/zipcodes-unmerged.shp shp/us/cbsa.shp shp/%/tracts.shp shp/%/blockgroups.shp shp/%/blocks.shp shp/%/zipcodes.shp:
+shp/us/us-all.shp shp/us/counties-all.shp shp/us/zipcodes-unmerged.shp shp/us/cbsa.shp shp/%/tracts.shp shp/%/blockgroups.shp shp/%/blocks.shp shp/%/zipcodes.shp:
 	rm -rf $(basename $@)
 	mkdir -p $(basename $@)
 	unzip -d $(basename $@) $<
@@ -117,6 +134,7 @@ shp/us/%.json: shp/us/%-unmerged.shp bin/geomerge
 	ogr2ogr -f 'GeoJSON' $(basename $@)-unmerged.json $<
 	bin/geomerge < $(basename $@)-unmerged.json > $@
 
+
 topo/counties-all.json: shp/us/counties-all.shp
 	mkdir -p $(dir $@)
 	node_modules/.bin/topojson \
@@ -125,8 +143,8 @@ topo/counties-all.json: shp/us/counties-all.shp
 		--post-quantization=1e6 \
 		--id-property=+GEOID \
 		--simplify=7e-7 \
-		--properties STATEFP \
-		--properties NAME \
+		--properties statefp=STATEFP \
+		--properties name=NAMELSAD \
 		-- $<
 
 		# --simplify-proportion=.50 \
@@ -145,6 +163,15 @@ topo/%-zipcodes-10m-ungrouped.json: shp/%/zipcodes.shp
 		# --no-pre-quantization \
 		# --post-quantization=1e6 \
 		# --simplify=7e-7 \
+
+countries/us-all.json: shp/us/us-all.shp
+	mkdir -p $(dir $@)
+	node_modules/.bin/topojson \
+		-o $@ \
+		--properties abbrev=STUSPS \
+		--properties name=NAME \
+		--id-property=+GEOID \
+		-- $<
 
 zipcodes/%.json: topo/%-zipcodes-10m-ungrouped.json
 	mkdir -p $(dir $@)
@@ -172,10 +199,11 @@ counties/%/: zipcodes/%.json
 		-c county-zipcodes/$*.json \
 		-o $@
 
-state-counties: topo/counties-all.json
+state-counties: topo/counties-all.json csv/zcta_county_rel_10.txt
 	mkdir -p $@
 	bin/split-state-counties \
 		-o $@ \
+		-c csv/zcta_county_rel_10.txt \
 		-- $<
 
 states: \
