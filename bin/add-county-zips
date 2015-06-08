@@ -1,21 +1,28 @@
 #!/usr/bin/env coffee
 
 fs = require 'fs'
+path = require 'path'
+_ = require 'underscore'
+parse = require 'csv-parse'
+
+
 argv = require('yargs')
-  .usage 'Usage: $0 -z <zipcodes.json> -t <topo.json>'
+  .usage 'Usage: $0 -t <topo.json> -z <zipcode tabulation>'
   .demand ['z', 't']
   .argv
 
-topo = JSON.parse fs.readFileSync argv.t
-zipcodes = JSON.parse fs.readFileSync argv.z
 
-for name, object of topo.objects
-  for geometry in object.geometries
-    node = zipcodes[geometry.properties.name]
+parser = parse columns: true, (err, data) ->
+  topo = JSON.parse fs.readFileSync argv.t
 
-    unless node
-      throw new Error('couldnt find '+ geometry.properties.name)
+  for geometry in topo.objects['counties-all'].geometries
+    geometry.properties.zipcodes = _.chain data
+      .where
+        STATE: geometry.properties.statefp
+        COUNTY: geometry.properties.countyfp
+      .pluck 'ZCTA5'
+      .value()
 
-    geometry.properties.zipcodes = node.zipcodes
+  console.log JSON.stringify topo
 
-console.log JSON.stringify topo
+fs.createReadStream(argv.z).pipe parser

@@ -144,10 +144,17 @@ topo/counties-all.json: shp/us/counties-all.shp
 		--id-property=+GEOID \
 		--simplify=7e-7 \
 		--properties statefp=STATEFP \
+		--properties countyfp=COUNTYFP \
 		--properties name=NAMELSAD \
 		-- $<
 
 		# --simplify-proportion=.50 \
+
+topo/counties-all-zipcodes.json: topo/counties-all.json csv/zcta_county_rel_10.txt
+	bin/add-county-zips
+		-t topo/counties-all.json
+		-z csv/zcta_county_rel_10.txt
+		> $@
 
 topo/%-zipcodes-10m-ungrouped.json: shp/%/zipcodes.shp
 	mkdir -p $(dir $@)
