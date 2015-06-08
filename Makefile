@@ -47,7 +47,7 @@ gz/tl_2014_us_county.zip:
 	mv $@.download $@
 
 # zip to county mapping
-csv/zcta_county_rel_10.txt:
+gss/zcta_county_rel_10.txt:
 	mkdir -p $(dir $@)
 	curl 'https://www.census.gov/geo/maps-data/data/docs/rel/zcta_county_rel_10.txt' -o $@.download
 	mv $@.download $@
